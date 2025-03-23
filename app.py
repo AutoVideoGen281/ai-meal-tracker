@@ -126,7 +126,7 @@ def upload_file():
             "proteins": protein_grams,
             "carbs": carb_grams,
             "fats": fat_grams
-        }}
+        }}"""
 
         
         response = model.generate_content(
