@@ -6,10 +6,6 @@ import google.generativeai as genai
 from PIL import Image
 import json
 from dotenv import load_dotenv
-from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, Float, Date
 from flask_sqlalchemy import SQLAlchemy
 
 # Load environment variables
@@ -56,7 +52,7 @@ with app.app_context():
 GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
 genai.configure(api_key=GOOGLE_API_KEY)
 
-# Initialize the Gemini model with 2.0 Flash
+# Initialize the Gemini model
 generation_config = {
     "temperature": 0.4,
     "top_p": 1,
@@ -77,26 +73,14 @@ model = genai.GenerativeModel(
     safety_settings=safety_settings
 )
 
-# Database setup
-Base = declarative_base()
-
-engine = create_engine('sqlite:///meals.db')
-Base.metadata.create_all(engine)
-Session = sessionmaker(bind=engine)
-
 def get_or_create_daily_record():
-    session = Session()
     today = date.today()
-    
-    try:
-        record = session.query(DailyNutrition).filter_by(date=today).first()
-        if not record:
-            record = DailyNutrition(date=today)
-            session.add(record)
-            session.commit()
-        return record
-    finally:
-        session.close()
+    record = DailyNutrition.query.filter_by(date=today).first()
+    if not record:
+        record = DailyNutrition(date=today)
+        db.session.add(record)
+        db.session.commit()
+    return record
 
 @app.route('/toggle-theme')
 def toggle_theme():
@@ -131,7 +115,7 @@ def upload_file():
         food_name = request.form.get('food_name', '')
         food_quantity = request.form.get('food_quantity', '')
         
-        # Construct the prompt with the food name and quantity
+        # Construct the prompt
         prompt = f"""You are a professional nutritionist analyzing food images. Analyze the following food image:
 Food name: {food_name}
 {f'Quantity: {food_quantity}' if food_quantity else 'Look for size references in the image (coins, hands) to estimate portion size'}
@@ -161,9 +145,9 @@ Return ONLY a JSON object with the following fields (all numbers should be float
             ],
             stream=False,
             generation_config={
-                "temperature": 0.1,  # Lower temperature for more consistent output
+                "temperature": 0.1,
                 "top_p": 1,
-                "top_k": 1,  # Reduced for more focused responses
+                "top_k": 1,
                 "max_output_tokens": 1024,
                 "candidate_count": 1
             }
@@ -174,12 +158,10 @@ Return ONLY a JSON object with the following fields (all numbers should be float
             
         response_text = response.text
         
-        # Extract JSON from response
         try:
             # Clean the response text to ensure valid JSON
             json_str = response_text.strip()
             if not (json_str.startswith('{') and json_str.endswith('}')):
-                # Try to find JSON object in the text
                 start_idx = json_str.find('{')
                 end_idx = json_str.rfind('}') + 1
                 if start_idx != -1 and end_idx > 0:
@@ -202,31 +184,38 @@ Return ONLY a JSON object with the following fields (all numbers should be float
             return jsonify({'success': False, 'error': f'Invalid response format: {str(e)}'})
         
         # Update daily totals in database
-        session = Session()
-        try:
-            daily_record = get_or_create_daily_record()
-            daily_record.calories += nutrition_data['calories']
-            daily_record.proteins += nutrition_data['proteins']
-            daily_record.carbs += nutrition_data['carbs']
-            daily_record.fats += nutrition_data['fats']
-            session.commit()
+        daily_record = get_or_create_daily_record()
+        daily_record.calories += nutrition_data['calories']
+        daily_record.proteins += nutrition_data['proteins']
+        daily_record.carbs += nutrition_data['carbs']
+        daily_record.fats += nutrition_data['fats']
+        
+        # Create new meal record
+        new_meal = Meal(
+            date=date.today(),
+            name=food_name,
+            calories=nutrition_data['calories'],
+            proteins=nutrition_data['proteins'],
+            carbs=nutrition_data['carbs'],
+            fats=nutrition_data['fats']
+        )
+        db.session.add(new_meal)
+        db.session.commit()
             
-            # Get updated daily totals
-            daily_total = {
-                'calories': daily_record.calories,
-                'proteins': daily_record.proteins,
-                'carbs': daily_record.carbs,
-                'fats': daily_record.fats,
-                'streak': daily_record.streak
-            }
+        # Get updated daily totals
+        daily_total = {
+            'calories': daily_record.calories,
+            'proteins': daily_record.proteins,
+            'carbs': daily_record.carbs,
+            'fats': daily_record.fats,
+            'streak': daily_record.streak
+        }
             
-            return jsonify({
-                'success': True,
-                'data': nutrition_data,
-                'daily_total': daily_total
-            })
-        finally:
-            session.close()
+        return jsonify({
+            'success': True,
+            'data': nutrition_data,
+            'daily_total': daily_total
+        })
             
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
@@ -244,27 +233,14 @@ def get_daily_stats():
 
 @app.route('/update-streak', methods=['POST'])
 def update_streak():
-    session = Session()
-    try:
-        daily_record = get_or_create_daily_record()
-        yesterday = date.today()
-        yesterday_record = session.query(DailyNutrition).filter(
-            DailyNutrition.date < yesterday
-        ).order_by(DailyNutrition.date.desc()).first()
-        
-        if yesterday_record and (yesterday - yesterday_record.date).days == 1:
-            daily_record.streak = yesterday_record.streak + 1
-        else:
-            daily_record.streak = 1
-            
-        session.commit()
-        return jsonify({'streak': daily_record.streak})
-    finally:
-        session.close()
+    daily_record = get_or_create_daily_record()
+    daily_record.streak += 1
+    db.session.commit()
+    return jsonify({'success': True, 'streak': daily_record.streak})
 
 @app.route('/static/<path:filename>')
 def static_files(filename):
     return send_from_directory('static', filename)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True) 
+    app.run(debug=True) 
