@@ -231,26 +231,30 @@ def upload_file():
         today_meals = Meal.query.filter_by(date=today).all()
         
         # Reset daily totals
-        daily_record.calories = sum(meal.calories for meal in today_meals)
-        daily_record.proteins = sum(meal.proteins for meal in today_meals)
-        daily_record.carbs = sum(meal.carbs for meal in today_meals)
-        daily_record.fats = sum(meal.fats for meal in today_meals)
+        daily_record.calories = sum(meal.calories for meal in today_meals) + nutrition_data['calories']
+        daily_record.proteins = sum(meal.proteins for meal in today_meals) + nutrition_data['proteins']
+        daily_record.carbs = sum(meal.carbs for meal in today_meals) + nutrition_data['carbs']
+        daily_record.fats = sum(meal.fats for meal in today_meals) + nutrition_data['fats']
         
         db.session.commit()
             
-        # Get updated daily totals
-        daily_total = {
-            'calories': daily_record.calories,
-            'proteins': daily_record.proteins,
-            'carbs': daily_record.carbs,
-            'fats': daily_record.fats,
-            'streak': daily_record.streak
-        }
-            
+        # Return both current meal and daily totals separately
         return jsonify({
             'success': True,
-            'data': nutrition_data,
-            'daily_total': daily_total
+            'current_meal': {  # This is just the current meal's nutrition
+                'name': food_name,
+                'calories': nutrition_data['calories'],
+                'proteins': nutrition_data['proteins'],
+                'carbs': nutrition_data['carbs'],
+                'fats': nutrition_data['fats']
+            },
+            'daily_total': {  # This is the running total for the day
+                'calories': daily_record.calories,
+                'proteins': daily_record.proteins,
+                'carbs': daily_record.carbs,
+                'fats': daily_record.fats,
+                'streak': daily_record.streak
+            }
         })
             
     except Exception as e:
