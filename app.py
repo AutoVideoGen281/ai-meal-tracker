@@ -120,15 +120,31 @@ def upload_file():
 Food name: {food_name}
 {f'Quantity: {food_quantity}' if food_quantity else 'Look for size references in the image (coins, hands) to estimate portion size'}
 
-Guidelines:
-1. If no quantity is specified, check for size references in the image:
-   - Look for coins or hands next to the food
-   - Use these as scale references (e.g., hand palm ≈ 3oz meat, fist ≈ 1 cup)
-   - If found, use them to estimate portion size
-2. If quantity is specified in the input, use that instead of visual references
-3. Consider cooking method and ingredients visible in the image
-4. Use standard nutritional databases for accuracy
-5. Provide realistic estimates based on visible portion size
+If no quantity is specified:
+
+Look for size references in the image to estimate portion size:
+
+Search for objects like coins, utensils, or hands placed next to the food to provide a visual scale.
+
+Use these references to estimate the portion size based on typical object dimensions.
+
+If no clear references are available, make an educated guess based on common food serving sizes or the visual appearance of the food.
+
+If quantity is specified:
+
+Use the provided quantity instead of visual references. Ensure the nutritional analysis reflects this specified amount.
+
+Cooking method and visible ingredients:
+
+Consider the cooking method (e.g., fried, grilled, steamed) and ingredients visible in the image when making your analysis. Different methods and ingredients can alter nutritional content (e.g., oils, sauces, seasoning).
+
+Use standard nutritional databases:
+
+Refer to recognized nutritional databases (e.g., USDA, food manufacturer data) for accurate calorie, macronutrient (carbs, protein, fat), and micronutrient information for the identified food.
+
+Provide realistic estimates:
+
+Base your estimates on the visible portion size in the image, adjusting for any cooking or preparation details that might impact the nutritional content (e.g., toppings, sauces, and portion distortions).
 
 Return ONLY a JSON object with the following fields (all numbers should be floats):
 {{
