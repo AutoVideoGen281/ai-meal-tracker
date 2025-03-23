@@ -135,7 +135,12 @@ def upload_file():
         prompt = f"""Analyze the meal in the attached image and estimate the macros and calories.
         
         Food name: {food_name}  
-        {f'Quantity: {food_quantity}' if food_quantity else 'Look for size references in the image (coins, hands) to estimate portion size, or estimate yourself if no reference is found'}  
+        {f'Quantity: {food_quantity}' if food_quantity else 'Look for size references in the image (coins, hands) to estimate portion size, or estimate yourself if no reference is found'} 
+        
+        make sure the results do fit these proportions:
+        Protein = 4 kcal per gram
+        Carbs = 4 kcal per gram
+        Fats = 9 kcal per gram
         
         Return ONLY a valid JSON object with the following fields. All numbers must:  
         - Be in **raw number format** (e.g., 1000 instead of 1,000; 100 instead of 100.0)  
