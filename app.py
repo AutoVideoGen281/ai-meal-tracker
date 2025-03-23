@@ -128,10 +128,10 @@ def upload_file():
         
         ```json
         {
-            "calories": nbr of calories estimated,
-            "proteins": nbr of protein estimated,
-            "carbs": nbr of carbs estimated,
-            "fats": nbr of fat estimated
+            "calories": 1000,
+            "proteins": 20,
+            "carbs": 50,
+            "fats": 10
         }
         """
 
