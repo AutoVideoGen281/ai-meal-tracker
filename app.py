@@ -77,7 +77,23 @@ def get_or_create_daily_record():
     today = date.today()
     record = DailyNutrition.query.filter_by(date=today).first()
     if not record:
-        record = DailyNutrition(date=today)
+        # Get yesterday's record for streak calculation
+        yesterday = DailyNutrition.query.filter(
+            DailyNutrition.date < today
+        ).order_by(DailyNutrition.date.desc()).first()
+        
+        # Calculate streak
+        streak = yesterday.streak + 1 if yesterday else 1
+        
+        # Create new record for today
+        record = DailyNutrition(
+            date=today,
+            calories=0,
+            proteins=0,
+            carbs=0,
+            fats=0,
+            streak=streak
+        )
         db.session.add(record)
         db.session.commit()
     return record
@@ -151,7 +167,7 @@ def upload_file():
             return jsonify({'success': False, 'error': 'Content blocked by safety settings'})
             
         response_text = response.text
-        print(response_text)
+        print("Raw Gemini response:", response_text)  # Debug print
         
         try:
             # Clean the response text to ensure valid JSON
@@ -164,28 +180,42 @@ def upload_file():
                 else:
                     raise ValueError("No valid JSON object found in response")
             
+            print("Cleaned JSON string:", json_str)  # Debug print
             nutrition_data = json.loads(json_str)
+            print("Parsed nutrition data:", nutrition_data)  # Debug print
             
             # Validate the required fields
             required_fields = ['calories', 'proteins', 'carbs', 'fats']
             if not all(field in nutrition_data for field in required_fields):
                 raise ValueError("Missing required nutritional fields")
                 
-            # Convert values to float
+            # Convert values to float and validate ranges
+            max_values = {
+                'calories': 1000,
+                'proteins': 100,
+                'carbs': 200,
+                'fats': 100
+            }
+            
             for field in required_fields:
-                nutrition_data[field] = float(nutrition_data.get(field, 0))
+                value = float(nutrition_data.get(field, 0))
+                # Ensure value is not negative
+                value = max(0, value)
+                # Ensure value doesn't exceed maximum
+                value = min(value, max_values[field])
+                # Round to 1 decimal place
+                nutrition_data[field] = round(value, 1)
+                
+            print("Final nutrition data:", nutrition_data)  # Debug print
                 
         except (json.JSONDecodeError, ValueError) as e:
+            print("Error processing response:", str(e))  # Debug print
             return jsonify({'success': False, 'error': f'Invalid response format: {str(e)}'})
         
         # Update daily totals in database
         daily_record = get_or_create_daily_record()
-        daily_record.calories += nutrition_data['calories']
-        daily_record.proteins += nutrition_data['proteins']
-        daily_record.carbs += nutrition_data['carbs']
-        daily_record.fats += nutrition_data['fats']
         
-        # Create new meal record
+        # Create new meal record first
         new_meal = Meal(
             date=date.today(),
             name=food_name,
@@ -195,6 +225,17 @@ def upload_file():
             fats=nutrition_data['fats']
         )
         db.session.add(new_meal)
+        
+        # Calculate daily totals from all meals today
+        today = date.today()
+        today_meals = Meal.query.filter_by(date=today).all()
+        
+        # Reset daily totals
+        daily_record.calories = sum(meal.calories for meal in today_meals)
+        daily_record.proteins = sum(meal.proteins for meal in today_meals)
+        daily_record.carbs = sum(meal.carbs for meal in today_meals)
+        daily_record.fats = sum(meal.fats for meal in today_meals)
+        
         db.session.commit()
             
         # Get updated daily totals
@@ -232,6 +273,16 @@ def update_streak():
     daily_record.streak += 1
     db.session.commit()
     return jsonify({'success': True, 'streak': daily_record.streak})
+
+@app.route('/reset-daily', methods=['POST'])
+def reset_daily():
+    daily_record = get_or_create_daily_record()
+    daily_record.calories = 0
+    daily_record.proteins = 0
+    daily_record.carbs = 0
+    daily_record.fats = 0
+    db.session.commit()
+    return jsonify({'success': True})
 
 @app.route('/static/<path:filename>')
 def static_files(filename):
