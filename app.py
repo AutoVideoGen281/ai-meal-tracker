@@ -151,6 +151,7 @@ def upload_file():
             return jsonify({'success': False, 'error': 'Content blocked by safety settings'})
             
         response_text = response.text
+        print(response_text)
         
         try:
             # Clean the response text to ensure valid JSON
