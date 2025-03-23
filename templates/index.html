@@ -474,18 +474,18 @@
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Store preview data
+                // Store preview data using current_meal instead of daily_total
                 currentPreview = {
                     name: foodName,
                     quantity: foodQuantity,
-                    nutrition: data.daily_total
+                    nutrition: data.current_meal
                 };
 
-                // Update preview display
-                document.getElementById('preview-calories').textContent = Math.round(data.daily_total.calories);
-                document.getElementById('preview-proteins').textContent = Math.round(data.daily_total.proteins);
-                document.getElementById('preview-carbs').textContent = Math.round(data.daily_total.carbs);
-                document.getElementById('preview-fats').textContent = Math.round(data.daily_total.fats);
+                // Update preview display with current_meal data
+                document.getElementById('preview-calories').textContent = Math.round(data.current_meal.calories);
+                document.getElementById('preview-proteins').textContent = Math.round(data.current_meal.proteins);
+                document.getElementById('preview-carbs').textContent = Math.round(data.current_meal.carbs);
+                document.getElementById('preview-fats').textContent = Math.round(data.current_meal.fats);
 
                 // Show preview and confirm button
                 document.getElementById('nutritionPreview').classList.remove('hidden');
