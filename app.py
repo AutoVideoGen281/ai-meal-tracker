@@ -141,11 +141,7 @@ def upload_file():
                 prompt,
                 {"mime_type": "image/jpeg", "data": img_byte_arr}
             ],
-            stream=False,
             generation_config={
-                "temperature": 0.1,
-                "top_p": 1,
-                "top_k": 1,
                 "max_output_tokens": 1024,
                 "candidate_count": 1
             }
