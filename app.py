@@ -116,17 +116,24 @@ def upload_file():
         food_quantity = request.form.get('food_quantity', '')
         
         # Construct the prompt
-        prompt = f"""analyse the meal i will attach as a picture and give me an estimate of macros and calories:  
-        Food name: {food_name}  
-        {f'Quantity: {food_quantity}' if food_quantity else 'Look for size references in the image (coins, hands) to estimate portion size, or estimate yourself if no reference is found'}
+        prompt = f"""Analyze the meal in the attached image and estimate the macros and calories.
         
-        Return ONLY a JSON object with the following fields (all numbers should be floats):  
-        {{
-            "calories": estimated_calories,
-            "proteins": protein_grams,
-            "carbs": carb_grams,
-            "fats": fat_grams
-        }}"""
+        Food name: {food_name}  
+        {f'Quantity: {food_quantity}' if food_quantity else 'Look for size references in the image (coins, hands) to estimate portion size, or estimate yourself if no reference is found'}  
+        
+        Return ONLY a valid JSON object with the following fields. All numbers must:  
+        - Be in **raw number format** (e.g., 1000 instead of 1,000; 100 instead of 100.0)  
+        - **Not** include any units like "kcal" or "g"  
+        - **Not** be enclosed in quotes (they must be actual numerical values)  
+        
+        ```json
+        {
+            "calories": nbr of calories estimated,
+            "proteins": nbr of protein estimated,
+            "carbs": nbr of carbs estimated,
+            "fats": nbr of fat estimated
+        }
+        """
 
         
         response = model.generate_content(
