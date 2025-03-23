@@ -116,7 +116,7 @@ def upload_file():
         food_quantity = request.form.get('food_quantity', '')
         
         # Construct the prompt
-        prompt = """Analyze the meal in the attached image and estimate the macros and calories.
+        prompt = f"""Analyze the meal in the attached image and estimate the macros and calories.
         
         Food name: {food_name}  
         {f'Quantity: {food_quantity}' if food_quantity else 'Look for size references in the image (coins, hands) to estimate portion size, or estimate yourself if no reference is found'}  
@@ -127,12 +127,12 @@ def upload_file():
         - **Not** be enclosed in quotes (they must be actual numerical values)  
         
         ```json
-        {
+        {{
             "calories": 1000,
             "proteins": 20,
             "carbs": 50,
             "fats": 10
-        }
+        }}
         """
 
         
