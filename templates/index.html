@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en" class="{{ 'dark' if theme == 'dark' }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AI-powered meal tracking app that analyzes food photos for accurate nutrition information. Track calories, proteins, carbs, and fats with ease.">
+    <meta name="keywords" content="meal tracker, AI nutrition, food analysis, calorie counter, macro tracking, diet app, nutrition app">
+    <meta property="og:title" content="AI Meal Tracker - Smart Food Analysis">
+    <meta property="og:description" content="Track your nutrition effortlessly with AI-powered food photo analysis. Get instant nutritional information from your meals.">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <title>AI Meal Tracker - Smart Food Analysis</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        /* Dark mode styles */
+        .dark body {
+            background-color: #1a1a1a;
+            color: #fbf2f2;
+        }
+        
+        .dark .bg-white {
+            background-color: #2d2d2d;
+        }
+        
+        .dark .text-gray-800 {
+            color: #fbf2f2;
+        }
+        
+        .dark .border-gray-300 {
+            border-color: #4a4a4a;
+        }
+        
+        .dark .text-gray-600 {
+            color: #a0a0a0;
+        }
+        
+        .dark input {
+            background-color: #1a1a1a;
+            color: #fbf2f2;
+            border-color: #4a4a4a;
+        }
+        
+        .dark .bg-gray-50 {
+            background-color: #2d2d2d;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 min-h-screen transition-colors duration-200">
+    <!-- Theme Toggle Button -->
+    <button onclick="toggleTheme()" class="fixed top-2 right-2 sm:top-4 sm:right-4 p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200 z-10">
+        <svg class="sun-icon w-5 h-5 sm:w-6 sm:h-6 text-gray-800 dark:text-gray-200" style="display: none;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+        </svg>
+        <svg class="moon-icon w-5 h-5 sm:w-6 sm:h-6 text-gray-800 dark:text-gray-200" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+        </svg>
+    </button>
+
+    <div class="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-4 sm:mb-8">
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white">AI Meal Tracker</h1>
+        </div>
+
+        <!-- Upload Section -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg mb-4 sm:mb-8 transition-all duration-200">
+            <div class="upload-area border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl p-4 sm:p-8 text-center cursor-pointer hover:border-blue-500 transition-colors duration-200">
+                <input type="file" id="image-upload" class="hidden" accept="image/*" onchange="handleImageUpload(event)">
+                <label for="image-upload" class="cursor-pointer">
+                    <div class="flex flex-col items-center">
+                        <svg class="w-8 h-8 sm:w-12 sm:h-12 text-gray-400 mb-2 sm:mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                        <p class="text-sm sm:text-base text-gray-600 dark:text-gray-300">Click to upload a food image</p>
+                        <div class="flex items-center mt-2">
+                            <p class="text-xs text-gray-500 dark:text-gray-400">Pro tip: Include a coin or hand for size reference</p>
+                            <button type="button" onclick="showSizeReferenceTip()" class="ml-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </label>
+            </div>
+            <div id="imagePreview" class="mt-4 hidden">
+                <img id="previewImg" class="max-h-48 sm:max-h-64 rounded-lg mx-auto object-contain" src="" alt="Preview">
+                <div class="mt-4 space-y-3">
+                    <div>
+                        <label for="food-name" class="block text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1">What food is in the image? *</label>
+                        <input type="text" id="food-name" placeholder="Ex: Chicken salad with avocado" required
+                               class="w-full px-2 sm:px-3 py-1 sm:py-2 text-sm sm:text-base rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
+                    </div>
+                    <div>
+                        <label for="food-quantity" class="block text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1">
+                            Quantity/Description (optional)
+                            <button type="button" onclick="showUploadTips()" class="ml-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                                <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </button>
+                        </label>
+                        <input type="text" id="food-quantity" placeholder="Adding portion size (e.g., 200g, 1 cup) helps AI accuracy!"
+                               class="w-full px-2 sm:px-3 py-1 sm:py-2 text-sm sm:text-base rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
+                    </div>
+                    <div id="nutritionPreview" class="hidden bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+                        <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Nutrition Preview</h4>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            <div class="bg-white dark:bg-gray-800 p-2 rounded-md">
+                                <div class="text-xs text-gray-500 dark:text-gray-400">Calories</div>
+                                <div class="text-sm font-semibold text-gray-800 dark:text-white"><span id="preview-calories">0</span> kcal</div>
+                            </div>
+                            <div class="bg-white dark:bg-gray-800 p-2 rounded-md">
+                                <div class="text-xs text-gray-500 dark:text-gray-400">Proteins</div>
+                                <div class="text-sm font-semibold text-gray-800 dark:text-white"><span id="preview-proteins">0</span>g</div>
+                            </div>
+                            <div class="bg-white dark:bg-gray-800 p-2 rounded-md">
+                                <div class="text-xs text-gray-500 dark:text-gray-400">Carbs</div>
+                                <div class="text-sm font-semibold text-gray-800 dark:text-white"><span id="preview-carbs">0</span>g</div>
+                            </div>
+                            <div class="bg-white dark:bg-gray-800 p-2 rounded-md">
+                                <div class="text-xs text-gray-500 dark:text-gray-400">Fats</div>
+                                <div class="text-sm font-semibold text-gray-800 dark:text-white"><span id="preview-fats">0</span>g</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button id="analyzeBtn" class="flex-1 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors duration-200 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed">
+                            Analyze
+                        </button>
+                        <button id="confirmBtn" class="hidden flex-1 bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 transition-colors duration-200 text-sm sm:text-base">
+                            Confirm
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Daily Summary -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg transition-all duration-200">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg sm:text-xl font-semibold text-gray-800 dark:text-white">Daily Summary</h2>
+                <div class="flex items-center">
+                    <span class="text-xl sm:text-2xl mr-2">🔥</span>
+                    <span class="text-base sm:text-lg font-bold text-gray-800 dark:text-white" id="streakCount">Streak: 0 days</span>
+                    <button onclick="showStreakInfo()" class="ml-2 p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                        <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Goals Settings -->
+            <div class="mb-4 sm:mb-6 p-3 sm:p-4 bg-gray-50 dark:bg-gray-700 rounded-lg sm:rounded-xl">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-sm sm:text-md font-semibold text-gray-700 dark:text-gray-300">Daily Goals</h3>
+                    <a href="https://www.calculator.net/macro-calculator.html" 
+                       target="_blank" 
+                       class="flex items-center text-xs sm:text-sm text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 transition-colors duration-200">
+                        <span>Calculate Your Goals</span>
+                        <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                        </svg>
+                    </a>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                    <div>
+                        <label class="block text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1">Calories Goal</label>
+                        <input type="number" id="calories-goal" value="2000" min="0" 
+                               class="w-full px-2 sm:px-3 py-1 sm:py-2 text-sm sm:text-base rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
+                    </div>
+                    <div>
+                        <label class="block text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1">Proteins Goal (g)</label>
+                        <input type="number" id="proteins-goal" value="60" min="0"
+                               class="w-full px-2 sm:px-3 py-1 sm:py-2 text-sm sm:text-base rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
+                    </div>
+                    <div>
+                        <label class="block text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1">Carbs Goal (g)</label>
+                        <input type="number" id="carbs-goal" value="300" min="0"
+                               class="w-full px-2 sm:px-3 py-1 sm:py-2 text-sm sm:text-base rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
+                    </div>
+                    <div>
+                        <label class="block text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1">Fats Goal (g)</label>
+                        <input type="number" id="fats-goal" value="70" min="0"
+                               class="w-full px-2 sm:px-3 py-1 sm:py-2 text-sm sm:text-base rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress Bars -->
+            <div class="space-y-3 sm:space-y-4">
+                <div>
+                    <div class="flex justify-between mb-1">
+                        <span class="text-xs sm:text-sm text-gray-600 dark:text-gray-300">Calories Progress</span>
+                        <span class="text-xs sm:text-sm text-gray-600 dark:text-gray-300"><span id="calories-value">0</span>/<span id="calories-goal-display">2000</span></span>
+                    </div>
+                    <div class="h-1.5 sm:h-2 bg-gray-200 dark:bg-gray-700 rounded-full">
+                        <div id="calories-progress" class="h-1.5 sm:h-2 bg-blue-500 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex justify-between mb-1">
+                        <span class="text-xs sm:text-sm text-gray-600 dark:text-gray-300">Proteins Progress</span>
+                        <span class="text-xs sm:text-sm text-gray-600 dark:text-gray-300"><span id="proteins-value">0</span>/<span id="proteins-goal-display">60</span>g</span>
+                    </div>
+                    <div class="h-1.5 sm:h-2 bg-gray-200 dark:bg-gray-700 rounded-full">
+                        <div id="proteins-progress" class="h-1.5 sm:h-2 bg-green-500 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex justify-between mb-1">
+                        <span class="text-xs sm:text-sm text-gray-600 dark:text-gray-300">Carbs Progress</span>
+                        <span class="text-xs sm:text-sm text-gray-600 dark:text-gray-300"><span id="carbs-value">0</span>/<span id="carbs-goal-display">300</span>g</span>
+                    </div>
+                    <div class="h-1.5 sm:h-2 bg-gray-200 dark:bg-gray-700 rounded-full">
+                        <div id="carbs-progress" class="h-1.5 sm:h-2 bg-yellow-500 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex justify-between mb-1">
+                        <span class="text-xs sm:text-sm text-gray-600 dark:text-gray-300">Fats Progress</span>
+                        <span class="text-xs sm:text-sm text-gray-600 dark:text-gray-300"><span id="fats-value">0</span>/<span id="fats-goal-display">70</span>g</span>
+                    </div>
+                    <div class="h-1.5 sm:h-2 bg-gray-200 dark:bg-gray-700 rounded-full">
+                        <div id="fats-progress" class="h-1.5 sm:h-2 bg-red-500 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Daily Meal History -->
+        <div id="mealHistory" class="mt-6 bg-white dark:bg-gray-800 rounded-xl p-4">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-3">Today's Meals</h3>
+            <div id="mealsList" class="space-y-2">
+                <!-- Meals will be added here dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // Local Storage Keys
+    const STREAK_KEY = 'meal_tracker_streak';
+    const LAST_UPLOAD_DATE_KEY = 'meal_tracker_last_upload';
+    const DAILY_TOTALS_KEY = 'meal_tracker_daily_totals';
+    const DAILY_RESET_KEY = 'meal_tracker_last_reset';
+    const GOALS_KEY = 'meal_tracker_goals';
+    const LAST_STREAK_CHECK = 'meal_tracker_last_streak_check';
+    const MEALS_KEY = 'meal_tracker_meals';
+    const LAST_MEALS_RESET = 'meal_tracker_meals_last_reset';
+
+    // Default goals
+    const DEFAULT_GOALS = {
+        calories: 2000,
+        proteins: 60,
+        carbs: 300,
+        fats: 70
+    };
+
+    // Current preview data
+    let currentPreview = null;
+
+    function showStreakInfo() {
+        alert(
+            "🔥 Streak System Explained:\n\n" +
+            "1. Daily Goals:\n" +
+            "- Calories: Within ±200 of your goal\n" +
+            "- Proteins: Within ±10g of your goal\n" +
+            "- Carbs: Within ±10g of your goal\n" +
+            "- Fats: Within ±10g of your goal\n\n" +
+            "2. Streak Rules:\n" +
+            "- Streak increases by 1 when you hit your goals for the day\n" +
+            "- Streak resets at midnight if you didn't hit your goals\n" +
+            "- You must log at least one meal per day to maintain streak\n\n" +
+            "3. Progress Reset:\n" +
+            "- Daily progress resets at midnight\n" +
+            "- Goals and streak history are saved even when you close the site"
+        );
+    }
+
+    function checkGoalsHit(totals, goals) {
+        return Math.abs(totals.calories - goals.calories) <= 200 &&
+               Math.abs(totals.proteins - goals.proteins) <= 10 &&
+               Math.abs(totals.carbs - goals.carbs) <= 10 &&
+               Math.abs(totals.fats - goals.fats) <= 10;
+    }
+
+    function checkAndUpdateStreak() {
+        const today = new Date().toDateString();
+        const lastCheck = localStorage.getItem(LAST_STREAK_CHECK);
+        const lastUpload = localStorage.getItem(LAST_UPLOAD_DATE_KEY);
+        
+        // If we haven't checked today and it's a new day
+        if (lastCheck !== today && lastUpload !== today) {
+            const currentTotals = JSON.parse(localStorage.getItem(DAILY_TOTALS_KEY)) || {
+                calories: 0,
+                proteins: 0,
+                carbs: 0,
+                fats: 0
+            };
+            const goals = JSON.parse(localStorage.getItem(GOALS_KEY)) || DEFAULT_GOALS;
+            
+            // Reset streak if goals weren't hit yesterday
+            if (!checkGoalsHit(currentTotals, goals)) {
+                localStorage.setItem(STREAK_KEY, '0');
+                document.getElementById('streakCount').textContent = 'Streak: 0 days';
+            }
+            
+            localStorage.setItem(LAST_STREAK_CHECK, today);
+        }
+    }
+
+    function resetMealsIfNeeded() {
+        const today = new Date().toDateString();
+        const lastReset = localStorage.getItem(LAST_MEALS_RESET);
+        
+        if (lastReset !== today) {
+            localStorage.setItem(MEALS_KEY, JSON.stringify([]));
+            localStorage.setItem(LAST_MEALS_RESET, today);
+            updateMealHistory();
+        }
+    }
+
+    function updateMealHistory() {
+        const mealsList = document.getElementById('mealsList');
+        const meals = JSON.parse(localStorage.getItem(MEALS_KEY)) || [];
+        
+        mealsList.innerHTML = meals.length ? '' : '<p class="text-sm text-gray-500 dark:text-gray-400">No meals logged today</p>';
+        
+        meals.forEach((meal, index) => {
+            const mealElement = document.createElement('div');
+            mealElement.className = 'flex items-center justify-between bg-gray-50 dark:bg-gray-700 p-3 rounded-lg';
+            mealElement.innerHTML = `
+                <div class="flex-1">
+                    <div class="flex items-center justify-between">
+                        <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300">${meal.name}</h4>
+                        <button onclick="removeMeal(${index})" class="text-red-500 hover:text-red-600 p-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </button>
+                    </div>
+                    ${meal.quantity ? `<p class="text-xs text-gray-500 dark:text-gray-400 mt-1">${meal.quantity}</p>` : ''}
+                    <div class="flex space-x-4 mt-2">
+                        <span class="text-xs text-gray-500 dark:text-gray-400">${meal.nutrition.calories} kcal</span>
+                        <span class="text-xs text-gray-500 dark:text-gray-400">${meal.nutrition.proteins}g protein</span>
+                        <span class="text-xs text-gray-500 dark:text-gray-400">${meal.nutrition.carbs}g carbs</span>
+                        <span class="text-xs text-gray-500 dark:text-gray-400">${meal.nutrition.fats}g fat</span>
+                    </div>
+                </div>
+            `;
+            mealsList.appendChild(mealElement);
+        });
+    }
+
+    function removeMeal(index) {
+        const meals = JSON.parse(localStorage.getItem(MEALS_KEY)) || [];
+        const removedMeal = meals.splice(index, 1)[0];
+        localStorage.setItem(MEALS_KEY, JSON.stringify(meals));
+        
+        // Update daily totals
+        const currentTotals = JSON.parse(localStorage.getItem(DAILY_TOTALS_KEY)) || {
+            calories: 0,
+            proteins: 0,
+            carbs: 0,
+            fats: 0
+        };
+
+        const newTotals = {
+            calories: Math.max(0, currentTotals.calories - removedMeal.nutrition.calories),
+            proteins: Math.max(0, currentTotals.proteins - removedMeal.nutrition.proteins),
+            carbs: Math.max(0, currentTotals.carbs - removedMeal.nutrition.carbs),
+            fats: Math.max(0, currentTotals.fats - removedMeal.nutrition.fats)
+        };
+
+        localStorage.setItem(DAILY_TOTALS_KEY, JSON.stringify(newTotals));
+        updateProgress(newTotals);
+        updateMealHistory();
+    }
+
+    // Initialize data from local storage
+    function initializeFromStorage() {
+        checkAndUpdateStreak();
+        resetMealsIfNeeded();
+        updateMealHistory();
+
+        // Load streak
+        const streak = localStorage.getItem(STREAK_KEY) || 0;
+        document.getElementById('streakCount').textContent = `Streak: ${streak} days`;
+
+        // Load saved goals
+        const savedGoals = JSON.parse(localStorage.getItem(GOALS_KEY)) || DEFAULT_GOALS;
+        document.getElementById('calories-goal').value = savedGoals.calories;
+        document.getElementById('proteins-goal').value = savedGoals.proteins;
+        document.getElementById('carbs-goal').value = savedGoals.carbs;
+        document.getElementById('fats-goal').value = savedGoals.fats;
+
+        // Update goal displays
+        document.getElementById('calories-goal-display').textContent = savedGoals.calories;
+        document.getElementById('proteins-goal-display').textContent = savedGoals.proteins;
+        document.getElementById('carbs-goal-display').textContent = savedGoals.carbs;
+        document.getElementById('fats-goal-display').textContent = savedGoals.fats;
+
+        // Check if we need to reset daily totals
+        const lastReset = localStorage.getItem(DAILY_RESET_KEY);
+        const today = new Date().toDateString();
+        
+        if (lastReset !== today) {
+            // Reset daily totals if it's a new day
+            localStorage.setItem(DAILY_TOTALS_KEY, JSON.stringify({
+                calories: 0,
+                proteins: 0,
+                carbs: 0,
+                fats: 0
+            }));
+            localStorage.setItem(DAILY_RESET_KEY, today);
+        }
+
+        // Load daily totals
+        const dailyTotals = JSON.parse(localStorage.getItem(DAILY_TOTALS_KEY)) || {
+            calories: 0,
+            proteins: 0,
+            carbs: 0,
+            fats: 0
+        };
+        updateProgress(dailyTotals);
+    }
+
+    function handleImageUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        // Show image preview
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('previewImg').src = e.target.result;
+            document.getElementById('imagePreview').classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+    }
+
+    // Analyze button click handler
+    document.getElementById('analyzeBtn').addEventListener('click', function() {
+        const file = document.getElementById('image-upload').files[0];
+        const foodName = document.getElementById('food-name').value.trim();
+        
+        if (!file || !foodName) {
+            alert('Please select an image and provide the food name.');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('image', file);
+        formData.append('food_name', foodName);
+        
+        const foodQuantity = document.getElementById('food-quantity').value.trim();
+        if (foodQuantity) {
+            formData.append('food_quantity', foodQuantity);
+        }
+
+        this.disabled = true;
+        this.textContent = 'Analyzing...';
+
+        fetch('/upload', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Store preview data
+                currentPreview = {
+                    name: foodName,
+                    quantity: foodQuantity,
+                    nutrition: data.daily_total
+                };
+
+                // Update preview display
+                document.getElementById('preview-calories').textContent = Math.round(data.daily_total.calories);
+                document.getElementById('preview-proteins').textContent = Math.round(data.daily_total.proteins);
+                document.getElementById('preview-carbs').textContent = Math.round(data.daily_total.carbs);
+                document.getElementById('preview-fats').textContent = Math.round(data.daily_total.fats);
+
+                // Show preview and confirm button
+                document.getElementById('nutritionPreview').classList.remove('hidden');
+                document.getElementById('confirmBtn').classList.remove('hidden');
+                this.textContent = 'Re-analyze';
+            } else {
+                alert('Error: ' + data.error);
+                this.textContent = 'Analyze';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while analyzing the image.');
+            this.textContent = 'Analyze';
+        })
+        .finally(() => {
+            this.disabled = false;
+        });
+    });
+
+    // Add confirm button handler
+    document.getElementById('confirmBtn').addEventListener('click', function() {
+        if (!currentPreview) return;
+
+        // Add to meals history
+        const meals = JSON.parse(localStorage.getItem(MEALS_KEY)) || [];
+        meals.push(currentPreview);
+        localStorage.setItem(MEALS_KEY, JSON.stringify(meals));
+
+        // Update daily totals
+        const currentTotals = JSON.parse(localStorage.getItem(DAILY_TOTALS_KEY)) || {
+            calories: 0,
+            proteins: 0,
+            carbs: 0,
+            fats: 0
+        };
+
+        const newTotals = {
+            calories: currentTotals.calories + currentPreview.nutrition.calories,
+            proteins: currentTotals.proteins + currentPreview.nutrition.proteins,
+            carbs: currentTotals.carbs + currentPreview.nutrition.carbs,
+            fats: currentTotals.fats + currentPreview.nutrition.fats
+        };
+
+        localStorage.setItem(DAILY_TOTALS_KEY, JSON.stringify(newTotals));
+        updateProgress(newTotals);
+        updateMealHistory();
+
+        // Check if goals are hit and update streak
+        const today = new Date().toDateString();
+        const lastUpload = localStorage.getItem(LAST_UPLOAD_DATE_KEY);
+        const goals = JSON.parse(localStorage.getItem(GOALS_KEY)) || DEFAULT_GOALS;
+        
+        if (lastUpload !== today && checkGoalsHit(newTotals, goals)) {
+            const currentStreak = parseInt(localStorage.getItem(STREAK_KEY)) || 0;
+            const newStreak = currentStreak + 1;
+            localStorage.setItem(STREAK_KEY, newStreak);
+            localStorage.setItem(LAST_UPLOAD_DATE_KEY, today);
+            document.getElementById('streakCount').textContent = `Streak: ${newStreak} days`;
+        }
+
+        // Reset UI
+        document.getElementById('imagePreview').classList.add('hidden');
+        document.getElementById('image-upload').value = '';
+        document.getElementById('food-name').value = '';
+        document.getElementById('food-quantity').value = '';
+        document.getElementById('nutritionPreview').classList.add('hidden');
+        this.classList.add('hidden');
+        currentPreview = null;
+    });
+
+    // Theme toggle functionality
+    function toggleTheme() {
+        fetch('/toggle-theme')
+            .then(response => response.json())
+            .then(data => {
+                document.documentElement.classList.toggle('dark');
+                const sunIcon = document.querySelector('.sun-icon');
+                const moonIcon = document.querySelector('.moon-icon');
+                if (data.theme === 'dark') {
+                    sunIcon.style.display = 'block';
+                    moonIcon.style.display = 'none';
+                } else {
+                    sunIcon.style.display = 'none';
+                    moonIcon.style.display = 'block';
+                }
+            });
+    }
+
+    // Initialize theme icon
+    document.addEventListener('DOMContentLoaded', function() {
+        const isDark = document.documentElement.classList.contains('dark');
+        const sunIcon = document.querySelector('.sun-icon');
+        const moonIcon = document.querySelector('.moon-icon');
+        if (isDark) {
+            sunIcon.style.display = 'block';
+            moonIcon.style.display = 'none';
+        } else {
+            sunIcon.style.display = 'none';
+            moonIcon.style.display = 'block';
+        }
+        initializeFromStorage();
+    });
+
+    function updateProgress(dailyTotal) {
+        // Update values
+        document.getElementById('calories-value').textContent = Math.round(dailyTotal.calories);
+        document.getElementById('proteins-value').textContent = Math.round(dailyTotal.proteins);
+        document.getElementById('carbs-value').textContent = Math.round(dailyTotal.carbs);
+        document.getElementById('fats-value').textContent = Math.round(dailyTotal.fats);
+
+        // Update progress bars
+        const caloriesGoal = parseInt(document.getElementById('calories-goal').value);
+        const proteinsGoal = parseInt(document.getElementById('proteins-goal').value);
+        const carbsGoal = parseInt(document.getElementById('carbs-goal').value);
+        const fatsGoal = parseInt(document.getElementById('fats-goal').value);
+
+        document.getElementById('calories-progress').style.width = `${Math.min(100, (dailyTotal.calories / caloriesGoal) * 100)}%`;
+        document.getElementById('proteins-progress').style.width = `${Math.min(100, (dailyTotal.proteins / proteinsGoal) * 100)}%`;
+        document.getElementById('carbs-progress').style.width = `${Math.min(100, (dailyTotal.carbs / carbsGoal) * 100)}%`;
+        document.getElementById('fats-progress').style.width = `${Math.min(100, (dailyTotal.fats / fatsGoal) * 100)}%`;
+    }
+
+    // Goal input handling
+    document.querySelectorAll('input[type="number"]').forEach(input => {
+        input.addEventListener('change', function() {
+            const type = this.id.split('-')[0];
+            const newValue = this.value;
+            document.getElementById(`${type}-goal-display`).textContent = newValue;
+            
+            // Save updated goals
+            const currentGoals = JSON.parse(localStorage.getItem(GOALS_KEY)) || DEFAULT_GOALS;
+            currentGoals[type] = parseInt(newValue);
+            localStorage.setItem(GOALS_KEY, JSON.stringify(currentGoals));
+            
+            // Recalculate progress with new goal
+            const dailyTotals = JSON.parse(localStorage.getItem(DAILY_TOTALS_KEY)) || {
+                calories: 0,
+                proteins: 0,
+                carbs: 0,
+                fats: 0
+            };
+            updateProgress(dailyTotals);
+        });
+    });
+
+    function showUploadTips() {
+        alert(
+            "📸 Tips for Better Results:\n\n" +
+            "1. For Packaged Foods:\n" +
+            "   - Take a clear photo of the nutrition label\n" +
+            "   - Make sure text is readable\n" +
+            "   - Include serving size information\n\n" +
+            "2. For Home-Cooked Meals:\n" +
+            "   - Specify portion size (e.g., 200g, 1 cup)\n" +
+            "   - Include main ingredients in description\n" +
+            "   - Use common measurements\n\n" +
+            "3. For Restaurant Meals:\n" +
+            "   - Mention restaurant name if known\n" +
+            "   - Describe portion size relative to standard servings\n" +
+            "   - Include any customizations"
+        );
+    }
+
+    function showSizeReferenceTip() {
+        alert(
+            "📏 Size Reference Guide:\n\n" +
+            "For more accurate portion estimation:\n\n" +
+            "1. Coins:\n" +
+            "   - Place a coin next to your food\n" +
+            "   - Keep it visible in the photo\n" +
+            "   - Make sure it's clean!\n\n" +
+            "2. Hand Reference:\n" +
+            "   - Palm ≈ 3oz portion of meat\n" +
+            "   - Fist ≈ 1 cup\n" +
+            "   - Thumb ≈ 1 tablespoon\n" +
+            "   - Thumb tip ≈ 1 teaspoon\n\n" +
+            "Note: If you specify quantity in the description, that will take priority."
+        );
+    }
+    </script>
+</body>
+</html> 
